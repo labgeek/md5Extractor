@@ -3,6 +3,7 @@ README
 Program name:  md5Extractor.py
 Date:  2/27/2015
 Support files: support.py
+Author:  JD Durick <labgeek@gmail.com>
 Description: Simple script to parse all PDF's within a specific directory and pull out all the MD5 values.  After extraction
 it writes them all to a file of your choice.
 
