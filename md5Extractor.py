@@ -1,10 +1,7 @@
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-import pyPdf
-import support
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from extractor import MD5Extractor
 import sys
-import re
-from collections import defaultdict
 
 class pdfAnalysis(QDialog):
     def __init__(self):
@@ -12,14 +9,12 @@ class pdfAnalysis(QDialog):
         layout = QVBoxLayout()
 
         self.dir = QLineEdit()
-        #self.label = QLabel()
         self.save_location = QLineEdit()
         self.progress = QProgressBar()
         execute = QPushButton("Execute")
         browse = QPushButton("Browse")
 
         self.dir.setPlaceholderText("Location of PDF's to parse!")
-        #self.dir.setText("set for static directory")
         self.save_location.setPlaceholderText("File Save location")
         self.progress.setValue(0)
         self.progress.setAlignment(Qt.AlignCenter)
@@ -40,43 +35,23 @@ class pdfAnalysis(QDialog):
         browse.clicked.connect(self.browse_file)
     
     def browse_file(self):
-        savefile = QFileDialog.getSaveFileName(self, caption="Save File As", directory=".", filter="All Files (*.*)")
+        savefile, _ = QFileDialog.getSaveFileName(self, caption="Save File As", directory=".", filter="All Files (*.*)")
         self.save_location.setText(QDir.toNativeSeparators(savefile))
            
     def search(self):
-        mainDict = defaultdict(list)
         dir = self.dir.text()
-        dirThere = support.dirExists(dir)
-        count = 0
-        if dirThere == False:
+        save_location = self.save_location.text()
+        extractor = MD5Extractor(dir, save_location)
+
+        if extractor.dir_exists() == False:
             QMessageBox.warning(self, "Whoa dog!", "The PDF input directory does not exist")
             return
 
-        save_location = self.save_location.text()
-        pdfList = support.readDir(str(dir))
-        sizeoflist = len(pdfList)
-        for pdf in pdfList:
-            count+=1
-            try:
-                if sizeoflist > 0:
-                    percent = count * 100 / sizeoflist
-                    self.progress.setValue(int(percent))
-                pageContent = support.getPDFContent(pdf).encode("ascii", "xmlcharrefreplace")
-                md5s = re.findall('[a-fA-F0-9]{32}',pageContent)
-                uniqueMd5s = set(md5s)
-                mainDict[pdf] = uniqueMd5s
-            except:
-                pass
-
-        support.writedata(mainDict, str(save_location))
+        extractor.extract(self.progress.setValue)
         exit()
-    
-    def report(self, numsofar, listSize):
-        if listSize > 0:
-            percent = numsofar * 100 / listSize
-            self.progress.setValue(int(percent))
 
-app = QApplication(sys.argv)
-p = pdfAnalysis()
-p.show()
-app.exec_()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    p = pdfAnalysis()
+    p.show()
+    app.exec_()

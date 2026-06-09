@@ -1,8 +1,7 @@
+import csv
 import os
 import re
 import sys
-
-import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -53,3 +52,21 @@ def test_get_pdf_content_finds_md5_hashes():
     content = ext.get_pdf_content(TESTPDF)
     md5s = MD5_RE.findall(content)
     assert len(md5s) > 0, "expected at least one MD5 hash in the test PDF"
+
+
+def test_extract_populates_results_and_writes_csv(tmp_path):
+    output = tmp_path / "results.csv"
+    ext = MD5Extractor(ROOT, str(output))
+
+    progress_values = []
+    results = ext.extract(progress_values.append)
+
+    assert TESTPDF in results
+    assert results[TESTPDF]
+    assert progress_values[-1] == 100
+
+    with output.open(newline="") as fh:
+        rows = list(csv.reader(fh))
+
+    assert rows[0] == ["Absolute_Path", "MD5_Hash_Values"]
+    assert any(row[0] == TESTPDF for row in rows[1:])
