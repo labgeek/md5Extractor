@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import pypdf
 
 
 class MD5Extractor:
@@ -19,3 +20,11 @@ class MD5Extractor:
             for filename in fnmatch.filter(files, '*.pdf'):
                 paths.append(os.path.join(root, filename))
         return paths
+
+    def get_pdf_content(self, path):
+        content = ""
+        with open(path, "rb") as fh:
+            pdf = pypdf.PdfReader(fh)
+            for page in pdf.pages:
+                content += (page.extract_text() or "") + "\n"
+        return content

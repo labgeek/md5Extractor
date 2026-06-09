@@ -35,3 +35,21 @@ def test_read_dir_finds_pdfs(tmp_path):
 def test_read_dir_empty_when_no_pdfs(tmp_path):
     ext = MD5Extractor(str(tmp_path), "out.csv")
     assert ext.read_dir() == []
+
+
+def test_testpdf_fixture_exists():
+    assert os.path.isfile(TESTPDF), "testpdf.pdf is required for extraction tests"
+
+
+def test_get_pdf_content_returns_nonempty_string():
+    ext = MD5Extractor(".", "out.csv")
+    content = ext.get_pdf_content(TESTPDF)
+    assert isinstance(content, str)
+    assert len(content) > 0
+
+
+def test_get_pdf_content_finds_md5_hashes():
+    ext = MD5Extractor(".", "out.csv")
+    content = ext.get_pdf_content(TESTPDF)
+    md5s = MD5_RE.findall(content)
+    assert len(md5s) > 0, "expected at least one MD5 hash in the test PDF"
