@@ -1,56 +1,32 @@
 # md5Extractor
 
-Date:  2/27/2015
+`md5Extractor` is a small PyQt5 desktop tool that scans PDF files for MD5-shaped hash values and writes the results to a text file named `md5Output.txt`.
 
-`md5Extractor` is a small Python GUI tool for scanning PDF files in a directory and writing any MD5-looking hash values it finds to a CSV file.
-
-The application recursively searches for `*.pdf` files, extracts text from each PDF with `pypdf`, finds 32-character hexadecimal strings, and writes the results in this format:
-
-```csv
-Absolute_Path,MD5_Hash_Values
-C:\path\to\file.pdf,44d88612fea8a8f36de82e1278abb02f
-```
+The app recursively searches a selected PDF directory for `*.pdf` files, extracts page text with `pypdf`, finds 32-character hexadecimal strings, and writes one output row per PDF/hash pair.
 
 ## Features
 
-- PyQt5 desktop interface.
+- PyQt5 GUI with separate buttons for selecting:
+  - the directory containing PDFs to parse
+  - the output directory for the results file
 - Recursive PDF discovery.
-- Text extraction from PDF pages.
-- MD5-pattern matching with the regex `[a-fA-F0-9]{32}`.
-- Duplicate hashes are collapsed per PDF.
-- CSV output with one row per PDF/hash pair.
-- Automated tests for the extractor behavior.
-
-## Project Layout
-
-```text
-md5Extractor.py        PyQt5 GUI entry point
-extractor.py           MD5Extractor implementation
-requirements.txt       Runtime dependencies
-tests/test_extractor.py
-                       Extractor tests
-testpdf.pdf            Test fixture used by the test suite
-README.txt             Legacy README
-README.md              Current project documentation
-```
+- PDF text extraction through `pypdf`.
+- MD5-pattern matching with `[a-fA-F0-9]{32}`.
+- Duplicate hash values are collapsed per PDF.
+- Automatic output directory creation when the directory does not already exist.
+- Fixed output filename: `md5Output.txt`.
+- Progress bar updates as PDFs are processed.
 
 ## Requirements
 
 - Python 3
 - `pypdf`
 - `PyQt5`
-- `pytest` if you want to run tests
 
-Install the runtime dependencies from the project root:
+Install dependencies from the project root:
 
 ```powershell
 python -m pip install -r requirements.txt
-```
-
-Install `pytest` if it is not already available:
-
-```powershell
-python -m pip install pytest
 ```
 
 ## Running the App
@@ -62,71 +38,92 @@ cd C:\data\projects\md5Extractor
 python md5Extractor.py
 ```
 
-The GUI has two text fields and two buttons:
+The application window provides:
 
-1. Enter the directory containing PDFs in the first field.
-2. Click `Browse` and choose the CSV output file path.
-3. Click `Execute`.
+- `Browse PDFs`: select the folder containing the PDFs to scan.
+- `Output Folder`: select the folder where `md5Output.txt` should be written.
+- `Execute`: start extraction.
 
-When extraction finishes, the app writes the CSV file and exits.
+You can also type paths directly into the text fields. If the output folder does not exist, the program attempts to create it before writing the output file.
 
-## Output Format
+## Output File
 
-The output file is written as CSV with this header:
+The output file is always named:
+
+```text
+md5Output.txt
+```
+
+It is written inside the selected output directory. For example, if the output directory is:
+
+```text
+C:\data\projects\md5Extractor\out
+```
+
+the final output path is:
+
+```text
+C:\data\projects\md5Extractor\out\md5Output.txt
+```
+
+The file content uses CSV-style rows:
 
 ```csv
 Absolute_Path,MD5_Hash_Values
+C:\path\to\file.pdf,44d88612fea8a8f36de82e1278abb02f
 ```
 
-Each following row contains:
+Each row contains:
 
-- `Absolute_Path`: path to the PDF file where the hash was found.
+- `Absolute_Path`: the PDF where the hash was found.
 - `MD5_Hash_Values`: one matched 32-character hexadecimal value.
 
-If a PDF contains multiple unique matching hashes, the CSV contains one row per hash. If the same hash appears multiple times in a PDF, it is written once for that PDF.
+If a PDF contains more than one unique matching hash, each hash is written on its own row. If the same hash appears multiple times in the same PDF, it is written once for that PDF.
 
-## Running Tests
+## Important Behavior
 
-From the project directory:
+- The app matches MD5-shaped strings. It does not verify that a value is actually the MD5 hash of a file.
+- PDFs that cannot be read are skipped.
+- Existing `md5Output.txt` files are appended to because the writer currently opens the file in append mode.
+- Each run writes a header row before writing results.
+- The GUI exits after extraction completes.
 
-```powershell
-python -m pytest
+## Project Layout
+
+```text
+md5Extractor.py      PyQt5 GUI entry point
+extractor.py         PDF scanning, hash extraction, and output writing
+requirements.txt     Runtime dependencies
+testpdf.pdf          Sample PDF fixture
+README.md            Current documentation
+README.txt           Legacy documentation
+contributors.txt     Contributor information
 ```
-
-The tests verify:
-
-- directory existence checks
-- recursive PDF discovery
-- PDF text extraction
-- MD5 pattern matching from the test PDF fixture
-- end-to-end extraction and CSV writing
 
 ## Implementation Notes
 
-The main extraction logic lives in `extractor.py`:
+The main extraction class is `MD5Extractor` in `extractor.py`.
 
-- `MD5Extractor.dir_exists()` checks whether the configured input directory exists.
-- `MD5Extractor.read_dir()` recursively finds PDF files.
-- `MD5Extractor.get_pdf_content()` extracts text from a PDF.
-- `MD5Extractor.extract()` coordinates scanning, matching, progress updates, and CSV writing.
-- `MD5Extractor.write_data()` writes the current results to CSV.
+Key methods:
 
-The GUI in `md5Extractor.py` creates an `MD5Extractor` instance and passes the progress bar's `setValue` method as the progress callback.
+- `dir_exists()` checks whether the PDF input directory exists.
+- `read_dir()` recursively finds PDF files.
+- `get_pdf_content()` extracts text from a PDF.
+- `extract()` coordinates scanning, matching, progress updates, and output writing.
+- `write_data()` writes results to `md5Output.txt`.
 
-## Known Behavior
+The GUI in `md5Extractor.py` builds the final output path by joining the selected output directory with `md5Output.txt`.
 
-- The app matches MD5-shaped strings only. It does not verify that the values are known file hashes.
-- PDF files that cannot be read are skipped.
-- The CSV file is opened in append mode, so repeated runs against the same output file add another header and additional rows.
-- The current GUI exits after a completed extraction.
+## Development Validation
 
-## Development
-
-Before changing extraction behavior, run:
+Run syntax validation after changing Python files:
 
 ```powershell
-python -m pytest
 python -m py_compile md5Extractor.py extractor.py
 ```
 
-Keep changes focused on the existing architecture unless a larger redesign is intentional.
+If tests are added or restored, run:
+
+```powershell
+python -m pytest
+```
