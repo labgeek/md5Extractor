@@ -1,8 +1,5 @@
-import csv
-import os
-import re
 import fnmatch
-import pypdf
+import os
 
 
 class MD5Extractor:
@@ -15,3 +12,10 @@ class MD5Extractor:
 
     def dir_exists(self):
         return os.path.isdir(self.directory)
+
+    def read_dir(self):
+        paths = []
+        for root, _, files in os.walk(self.directory):
+            for filename in fnmatch.filter(files, '*.pdf'):
+                paths.append(os.path.join(root, filename))
+        return paths

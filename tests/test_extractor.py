@@ -1,7 +1,5 @@
-import csv
 import os
 import re
-import shutil
 import sys
 
 import pytest
@@ -23,3 +21,17 @@ def test_dir_exists_true_for_real_dir():
 def test_dir_exists_false_for_missing_dir():
     ext = MD5Extractor(os.path.join(ROOT, "definitely-not-here"), "out.csv")
     assert ext.dir_exists() is False
+
+
+def test_read_dir_finds_pdfs(tmp_path):
+    (tmp_path / "a.pdf").write_bytes(b"")
+    (tmp_path / "b.txt").write_bytes(b"")
+    ext = MD5Extractor(str(tmp_path), "out.csv")
+    result = ext.read_dir()
+    assert len(result) == 1
+    assert result[0].endswith("a.pdf")
+
+
+def test_read_dir_empty_when_no_pdfs(tmp_path):
+    ext = MD5Extractor(str(tmp_path), "out.csv")
+    assert ext.read_dir() == []
