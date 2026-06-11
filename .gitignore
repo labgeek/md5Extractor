@@ -2,3 +2,5 @@
 __pycache__/
 docs/
 tests/
+dist/
+build/

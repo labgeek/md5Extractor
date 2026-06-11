@@ -6,12 +6,15 @@ import sys
 
 
 def resource_path(filename):
+    """Return a file path that works from source and PyInstaller bundles."""
     if getattr(sys, "frozen", False):
         return os.path.join(sys._MEIPASS, filename)
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
 
 class ScanWorker(QObject):
+    """Run PDF extraction in a worker thread and emit GUI-safe signals."""
+
     progress_updated = pyqtSignal(int)
     status_updated = pyqtSignal(str)
     result_found = pyqtSignal(str, str)
@@ -19,11 +22,13 @@ class ScanWorker(QObject):
     scan_failed = pyqtSignal(str)
 
     def __init__(self, directory, save_path):
+        """Create a worker for the selected input directory and output path."""
         QObject.__init__(self)
         self.directory = directory
         self.save_path = save_path
 
     def run(self):
+        """Execute extraction and emit completion or failure signals."""
         try:
             extractor = MD5Extractor(self.directory, self.save_path)
             results = extractor.extract(
@@ -37,9 +42,12 @@ class ScanWorker(QObject):
 
 
 class ReadmeWindow(QDialog):
+    """Display README.md in a separate read-only dialog."""
+
     closed = pyqtSignal()
 
     def __init__(self, readme_path, parent=None):
+        """Create the README viewer for the provided README path."""
         QDialog.__init__(self, parent)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.readme_path = readme_path
@@ -62,6 +70,7 @@ class ReadmeWindow(QDialog):
         self.load_readme()
 
     def load_readme(self):
+        """Load README.md text into the viewer, or show the read error."""
         try:
             with open(self.readme_path, "r", encoding="utf-8") as readme:
                 self.viewer.setPlainText(readme.read())
@@ -69,12 +78,16 @@ class ReadmeWindow(QDialog):
             self.viewer.setPlainText("Could not open README.md: %s" % error)
 
     def closeEvent(self, event):
+        """Emit a close signal so the main window can update its button text."""
         self.closed.emit()
         QDialog.closeEvent(self, event)
 
 
 class pdfAnalysis(QDialog):
+    """Main MD5Extractor application dialog."""
+
     def __init__(self):
+        """Build the GUI, initialize state, and connect widget signals."""
         QDialog.__init__(self)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
@@ -191,22 +204,26 @@ class pdfAnalysis(QDialog):
         self.browse_save.clicked.connect(self.browse_file)
 
     def browse_pdf_directory(self):
+        """Open a folder picker and populate the input PDF directory field."""
         directory = QFileDialog.getExistingDirectory(self, caption="Select PDF Directory", directory=".")
         if directory:
             self.dir.setText(QDir.toNativeSeparators(directory))
 
     def browse_file(self):
+        """Open a folder picker and populate the output directory field."""
         directory = QFileDialog.getExistingDirectory(self, caption="Select Output Directory", directory=".")
         if directory:
             self.save_location.setText(QDir.toNativeSeparators(directory))
 
     def clear_fields(self):
+        """Clear selected paths, scan results, progress, and status text."""
         self.dir.clear()
         self.save_location.clear()
         self.reset_scan_output()
         self.status_label.setText("Ready")
 
     def toggle_readme(self):
+        """Open README.md in a separate window, or close it if already open."""
         if self.readme_window is not None:
             self.readme_window.close()
             return
@@ -218,10 +235,12 @@ class pdfAnalysis(QDialog):
         self.readme_button.setText("Close README")
 
     def readme_closed(self):
+        """Reset README window state after the viewer is closed."""
         self.readme_window = None
         self.readme_button.setText("Open README")
 
     def reset_scan_output(self):
+        """Reset result table, progress bar, summary counts, and output path."""
         self.results_table.setRowCount(0)
         self.progress.setValue(0)
         self.pdfs_scanned.setText("0")
@@ -231,6 +250,7 @@ class pdfAnalysis(QDialog):
         self.output_file.setToolTip("")
 
     def set_controls_enabled(self, enabled):
+        """Enable or disable scan configuration controls during processing."""
         self.execute.setEnabled(enabled)
         self.clear.setEnabled(enabled)
         self.browse_pdf.setEnabled(enabled)
@@ -239,6 +259,7 @@ class pdfAnalysis(QDialog):
         self.save_location.setEnabled(enabled)
 
     def add_result(self, pdf, md5):
+        """Append one PDF/hash result row to the results table."""
         row = self.results_table.rowCount()
         self.results_table.insertRow(row)
         self.results_table.setItem(row, 0, QTableWidgetItem(pdf))
@@ -246,6 +267,7 @@ class pdfAnalysis(QDialog):
         self.hashes_found.setText(str(row + 1))
 
     def search(self):
+        """Validate user input and start the threaded PDF scan."""
         directory = self.dir.text().strip()
         output_directory = self.save_location.text().strip()
 
@@ -298,6 +320,7 @@ class pdfAnalysis(QDialog):
         self.scan_thread.start()
 
     def scan_complete(self, results, skipped_count, save_path):
+        """Update summary fields and notify the user after a successful scan."""
         scanned_count = len(results) + skipped_count
         hash_count = sum(len(md5s) for md5s in results.values())
 
@@ -311,11 +334,13 @@ class pdfAnalysis(QDialog):
         QMessageBox.information(self, "Scan Complete", "Parsing complete. Output saved to %s" % save_path)
 
     def scan_failed(self, error):
+        """Re-enable controls and report a scan failure."""
         self.status_label.setText("Scan failed")
         self.set_controls_enabled(True)
         QMessageBox.critical(self, "Scan Error", "The scan could not be completed: %s" % error)
 
     def scan_thread_finished(self):
+        """Clear references after the scan thread finishes."""
         self.scan_thread = None
         self.scan_worker = None
 

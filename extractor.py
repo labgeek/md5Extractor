@@ -6,18 +6,23 @@ import re
 
 
 class MD5Extractor:
+    """Extract MD5-shaped values from PDF files and write CSV-style output."""
+
     MD5_PATTERN = r'[a-fA-F0-9]{32}'
 
     def __init__(self, directory, save_path):
+        """Create an extractor for a PDF directory and output file path."""
         self.directory = directory
         self.save_path = save_path
         self.results = {}
         self.errors = []
 
     def dir_exists(self):
+        """Return True when the configured input directory exists."""
         return os.path.isdir(self.directory)
 
     def read_dir(self):
+        """Return a sorted list of PDF paths found below the input directory."""
         paths = []
         for root, _, files in os.walk(self.directory):
             for filename in fnmatch.filter(files, '*.pdf'):
@@ -25,6 +30,7 @@ class MD5Extractor:
         return sorted(paths)
 
     def get_pdf_content(self, path):
+        """Extract and return text content from every page in a PDF file."""
         content = ""
         with open(path, "rb") as fh:
             pdf = pypdf.PdfReader(fh)
@@ -33,6 +39,16 @@ class MD5Extractor:
         return content
 
     def extract(self, progress_callback=None, status_callback=None, result_callback=None):
+        """Scan PDFs, emit optional callbacks, write output, and return results.
+
+        Args:
+            progress_callback: Optional callable receiving an integer percentage.
+            status_callback: Optional callable receiving skipped-file messages.
+            result_callback: Optional callable receiving each ``pdf_path, md5`` pair.
+
+        Returns:
+            A dictionary mapping PDF paths to sets of unique MD5-shaped values.
+        """
         self.results = {}
         self.errors = []
         pdfs = self.read_dir()
@@ -58,6 +74,7 @@ class MD5Extractor:
         return self.results
 
     def write_data(self):
+        """Append extracted PDF/hash pairs to the configured output file."""
         with open(self.save_path, mode='a', newline='') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(['Absolute_Path', 'MD5_Hash_Values'])
