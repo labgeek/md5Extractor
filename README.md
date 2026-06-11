@@ -2,7 +2,7 @@
 
 Author: labgeek@gmail.com (JD Durick)
 
-`MD5Extractor` is a PyQt5 desktop application that scans PDF files for MD5-shaped hash values and writes the results to `md5Output.txt`.
+`MD5Extractor` is a simple PyQt5 desktop application that scans PDF files for MD5-shaped hash values and writes the results to `md5Output.txt`.
 
 The app recursively searches a selected input folder for PDF files, extracts page text with `pypdf`, finds 32-character hexadecimal values, and writes one row per PDF/hash pair.
 
