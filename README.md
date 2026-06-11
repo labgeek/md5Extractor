@@ -6,6 +6,9 @@ Author: labgeek@gmail.com (JD Durick)
 
 The app recursively searches a selected input folder for PDF files, extracts page text with `pypdf`, finds 32-character hexadecimal values, and writes one row per PDF/hash pair.
 
+<img width="1180" height="499" alt="image" src="https://github.com/user-attachments/assets/01e3a331-6647-4066-95ff-b11f7d476922" />
+
+
 ## Features
 
 - Branded PyQt5 interface with the application title, version, author, and current launch date.
