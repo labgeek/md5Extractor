@@ -142,4 +142,12 @@ Run syntax validation after changing Python files:
 python -m py_compile md5Extractor.py extractor.py
 ```
 
+Build a Windows executable with PyInstaller:
+
+```powershell
+python -m PyInstaller --clean --onefile --windowed --name MD5Extractor --hidden-import PyQt5.sip --add-data "README.md;." md5Extractor.py
+```
+
+The `--add-data "README.md;."` option bundles this README so the in-app README button works from the compiled executable.
+
 If tests are added later, run the project test command documented with those tests.

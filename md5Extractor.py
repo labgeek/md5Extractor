@@ -5,6 +5,12 @@ import os
 import sys
 
 
+def resource_path(filename):
+    if getattr(sys, "frozen", False):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+
 class ScanWorker(QObject):
     progress_updated = pyqtSignal(int)
     status_updated = pyqtSignal(str)
@@ -205,7 +211,7 @@ class pdfAnalysis(QDialog):
             self.readme_window.close()
             return
 
-        readme_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md")
+        readme_path = resource_path("README.md")
         self.readme_window = ReadmeWindow(readme_path, self)
         self.readme_window.closed.connect(self.readme_closed)
         self.readme_window.show()
